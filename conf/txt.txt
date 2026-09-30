@@ -1,0 +1,70 @@
+-- Criação do banco de dados
+CREATE DATABASE IF NOT EXISTS empresa_db;
+USE empresa_db;
+
+-- 1. Tabela de Departamentos
+-- Criada primeiro pois não depende de outras tabelas
+CREATE TABLE departamento (
+    id_departamento INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    localizacao VARCHAR(100)
+);
+
+-- 2. Tabela de Cargos
+-- Define os papéis e o piso salarial da função
+CREATE TABLE cargo (
+    id_cargo INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(100) NOT NULL,
+    nivel ENUM('Junior', 'Pleno', 'Sênior', 'Gerência', 'Diretoria') NOT NULL,
+    salario_base DECIMAL(10, 2) NOT NULL
+);
+
+-- 3. Tabela de Funcionários
+-- Relaciona-se com departamento e cargo (Chaves Estrangeiras)
+CREATE TABLE funcionario (
+    id_funcionario INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
+    data_admissao DATE NOT NULL,
+    id_departamento INT,
+    id_cargo INT,
+    CONSTRAINT fk_funcionario_departamento 
+        FOREIGN KEY (id_departamento) REFERENCES departamento(id_departamento)
+        ON DELETE SET NULL, -- Se o departamento for apagado, o funcionário fica sem departamento
+    CONSTRAINT fk_funcionario_cargo 
+        FOREIGN KEY (id_cargo) REFERENCES cargo(id_cargo)
+        ON DELETE RESTRICT -- Impede a exclusão de um cargo se houver funcionários nele
+);
+
+-- 4. Tabela de Histórico de Salários
+-- Permite acompanhar os aumentos e mudanças salariais do funcionário ao longo do tempo
+CREATE TABLE historico_salario (
+    id_historico INT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario INT NOT NULL,
+    salario_atual DECIMAL(10, 2) NOT NULL,
+    data_inicio DATE NOT NULL,
+    data_fim DATE, -- Pode ser NULL se for o salário vigente atual
+    CONSTRAINT fk_salario_funcionario 
+        FOREIGN KEY (id_funcionario) REFERENCES funcionario(id_funcionario)
+        ON DELETE CASCADE -- Se o funcionário for apagado, seu histórico salarial também é
+);
+
+-- ==========================================
+-- INSERÇÃO DE DADOS PARA TESTE (Opcional)
+-- ==========================================
+
+INSERT INTO departamento (nome, localizacao) VALUES 
+('Tecnologia', 'Andar 3'),
+('Recursos Humanos', 'Andar 1');
+
+INSERT INTO cargo (titulo, nivel, salario_base) VALUES 
+('Desenvolvedor Backend', 'Pleno', 6500.00),
+('Analista de RH', 'Junior', 3200.00);
+
+INSERT INTO funcionario (nome, cpf, data_admissao, id_departamento, id_cargo) VALUES 
+('Carlos Silva', '111.222.333-44', '2023-01-15', 1, 1),
+('Ana Souza', '555.666.777-88', '2023-06-20', 2, 2);
+
+INSERT INTO historico_salario (id_funcionario, salario_atual, data_inicio, data_fim) VALUES 
+(1, 6500.00, '2023-01-15', NULL),
+(2, 3200.00, '2023-06-20', NULL);
